@@ -3,39 +3,74 @@ pd.options.mode.copy_on_write = True
 import yfinance as yf
 import matplotlib.pyplot as plt
 
-# 获取贵州茅台股票数据
-symbol = "600519.SS"
-start_date = "2023-05-01"
-end_date = "2025-04-01"
 
-data = yf.download(symbol, start=start_date, end=end_date)
+class Test:
+    def __init__(self, config):
+        self.config = config
+        
+        # symbol = config['symbol']
+        # start_date = config['start_date']
+        # end_date = config['end_date']
 
-# 计算短期（50天）和长期（200天）移动平均
-day1 = 5
-day2 = 20
-name1 = "MA_{}".format(day1)
-name2 = "MA_{}".format(day2)
+        self.data = yf.download(config['symbol'], start=config['start_date'], end= config['end_date'])
 
-data[name1] = data['Close'].rolling(window=day1).mean()
-data[name2] = data['Close'].rolling(window=day2).mean()
+    def run(self):
+        self.mean_average_strategy()
 
-# 生成买卖信号
-data['Signal'] = 0
-data.loc[data[name1] > data[name2], 'Signal'] = -1  # 短期均线上穿长期均线，产生买入信号
-data.loc[data[name1] < data[name2], 'Signal'] = 1  # 短期均线下穿长期均线，产生卖出信号
-print(data)
-# 绘制股价和移动平均线
-plt.figure(figsize=(30, 18))
-plt.plot(data['Close'], label='Close Price')
-plt.plot(data[name1], label='{}-day Moving Average'.format(day1))
-plt.plot(data[name2], label='{}-day Moving Average'.format(day2))
+        pass
 
-# 标记买卖信号
-plt.scatter(data[data['Signal'] == 1].index, data[data['Signal'] == 1][name1], marker='^', color='g', label='Buy Signal')
-plt.scatter(data[data['Signal'] == -1].index, data[data['Signal'] == -1][name1], marker='v', color='r', label='Sell Signal')
+    def mean_average_strategy(self):        
+        day1 = self.config['long']
+        day2 = self.config['short']
+        name1 = "MA_{}".format(day1)
+        name2 = "MA_{}".format(day2)
 
-plt.title("Maotai Stock Price with Moving Averages")
-plt.xlabel("Date")
-plt.ylabel("Price (CNY)")
-plt.legend()
-plt.show()
+        self.data[name1] = self.data['Close'].rolling(window=day1).mean()
+        self.data[name2] = self.data['Close'].rolling(window=day2).mean()
+
+        # 生成买卖信号
+        self.data['Signal'] = 0
+        self.data.loc[self.data[name1] > self.data[name2], 'Signal'] = -1  # 短期均线上穿长期均线，产生买入信号
+        self.data.loc[self.data[name1] < self.data[name2], 'Signal'] = 1  # 短期均线下穿长期均线，产生卖出信号
+
+        self.draw(name1, name2, day1, day2)
+
+
+    def backtest(self):
+        pass
+
+    
+    def draw(self, name1, name2, day1, day2, figsize=(15, 9)):
+        # 绘制股价和移动平均线
+        plt.figure(figsize=figsize)
+        plt.plot(self.data['Close'], label='Close Price')
+        plt.plot(self.data[name1], label='{}-day Moving Average'.format(day1))
+        plt.plot(self.data[name2], label='{}-day Moving Average'.format(day2))
+
+        # 标记买卖信号
+        plt.scatter(self.data[self.data['Signal'] == 1].index, self.data[self.data['Signal'] == 1][name1], marker='^', color='g', label='Buy Signal')
+        plt.scatter(self.data[self.data['Signal'] == -1].index, self.data[self.data['Signal'] == -1][name1], marker='v', color='r', label='Sell Signal')
+
+        plt.title("{} Stock Price with Moving Averages".format(self.config['stock_name']))
+        plt.xlabel("Date")
+        plt.ylabel("Price (CNY)")
+        plt.legend()
+        plt.show()
+
+
+if __name__ =="__main__":
+    config = {
+        'name':'Moving Average',
+        'long':50,
+        'short':10,
+
+        'stock_name':'Maotai',
+        'symbol': "600519.SS",
+        'start_date':"2023-05-01",
+        'end_date':"2025-04-01",
+
+    }
+
+    Test(config).run()
+
+    # set QUANDL_API_KEY=JxAk9PxnUUfSqh6swgev
