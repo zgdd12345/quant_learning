@@ -1,10 +1,7 @@
-import os
-import datetime
-import pytz
+import os, datetime, pytz, time
 import pandas as pd
 import ccxt
 import click
-import time  # Add this import for retry delays
 
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
@@ -41,7 +38,8 @@ def download(symbol: str, start=None, end=None, timeframe="1d", save_dir="."):
     # Create save directory if it doesn't exist
     Path(save_dir).mkdir(parents=True, exist_ok=True)
 
-    absolute_path = os.path.join(save_dir, f"{symbol.replace('/', '-')}_{str(start)[:10]}_{str(end)[:10]}_{timeframe}.csv")
+    # absolute_path = os.path.join(save_dir, f"{symbol.replace('/', '-')}_{str(start)[:10]}_{str(end)[:10]}_{timeframe}.csv")
+    absolute_path = os.path.join(save_dir, f"{str(start)[:10]}_{str(end)[:10]}_{timeframe}.csv")
 
     ohlcvs = []
     while True:
@@ -76,15 +74,37 @@ def download(symbol: str, start=None, end=None, timeframe="1d", save_dir="."):
     print(f"Data saved to: {absolute_path}")
 
 
-def fetch_historical_data(symbol, start, end, multifile, timeframe, save_dir):
+def fetch_historical_data(symbol, start, end, interval='y', timeframe='1d', save_dir='.'):
     """
     Download OHLCV data from Binance
     
-    
     """
+    if interval == 'y':
+        save_dir = os.path.join(save_dir, symbol.replace('/', ''), 'years') + "_" + timeframe
+    elif interval == 'm':
+        save_dir = os.path.join(save_dir, symbol.replace('/', ''), 'months') + "_" + timeframe
+    elif interval == 'w':
+        save_dir = os.path.join(save_dir, symbol.replace('/', ''), 'weeks') + "_" + timeframe
+    elif interval == 'd':
+        save_dir = os.path.join(save_dir, symbol.replace('/', ''), 'days') + "_" + timeframe
+    else:
+        assert False, "The interval must be one of 'y', 'm', 'w', 'd'"
 
+    start = datetime.datetime.strptime(start, '%Y-%m-%d')
+    end = datetime.datetime.strptime(end, '%Y-%m-%d')
+    current = start
+    while current < end:
+        if interval == 'y':
+            added_date = relativedelta(years=1)
+        elif interval == 'm':
+            added_date = relativedelta(months=1)
+        elif interval == 'w':
+            added_date = relativedelta(weeks=1)
+        elif interval == 'd':
+            added_date = relativedelta(days=1)
 
-    download(symbol=symbol, start=start, end=end, timeframe=timeframe, save_dir=save_dir)
+        download(symbol=symbol, start=current, end=current + added_date, timeframe=timeframe, save_dir=save_dir)
+        current += added_date
 
 
 @click.command()
@@ -97,26 +117,9 @@ def main(symbol, start, end, timeframe, save_dir):
     """Download OHLCV data from Binance"""
     download(symbol=symbol, start=start, end=end, timeframe=timeframe, save_dir=save_dir)
 
-
-
-# if __name__ == "__main__":
-#     # exchange = ccxt.binance({'enableRateLimit': True})
-#     start_time = exchange.parse8601('2025-03-12T00:00:00Z')  # 调整起始日期
-#     end_time = exchange.parse8601('2025-04-12T00:00:00Z')
-#     all_data = []
-
-#     while start_time < end_time:
-#         ohlcv = exchange.fetch_ohlcv('BTC/USDT', '1m', since=start_time, limit=1000)
-#         if not ohlcv: break
-#         all_data.extend(ohlcv)
-#         start_time = ohlcv[-1][0] + 1  # 更新起始时间戳
-
-#     df = pd.DataFrame(all_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-#     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-
 if __name__ == "__main__":
-    time_list = [(2023, 4, 12), (2023, 4, 12), (2023, 4, 12), (2023, 4, 12), (2023, 4, 12)]
-    for tup in [('2023-04-12', '2025-04-12'), ]:
-        main()
+    # main()
+    
+    fetch_historical_data(symbol="BTC/USDT", start="2017-01-01", end="2026-01-01", interval='m', timeframe='1s', save_dir='./data')
 
 #  python data.py --symbol BTC/USDT --start 2023-04-12 --end 2025-04-12 --timeframe 1m --save-dir ./data
