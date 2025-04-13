@@ -107,6 +107,31 @@ def fetch_historical_data(symbol, start, end, interval='y', timeframe='1d', save
         current += added_date
 
 
+
+def convert_to_zipline_format(path, save_dir, symbol, timeframe="1m", interval="d"):
+    if timeframe == "1m":
+        timeframe_dir = "minute"
+    elif timeframe == "1h":
+        timeframe_dir = "hour"
+    elif timeframe == "1d":
+        timeframe_dir = "daily"
+
+    for csv_name in os.listdir(path):
+        df = pd.read_csv(os.path.join(path, csv_name), index_col=0, parse_dates=True)
+        df = df.sort_index()
+        df = df.ffill()
+        date = csv_name[:10]
+
+        save_path = os.path.join(save_dir, timeframe_dir, date)
+        if not  os.path.exists(save_path):
+            os.makedirs(os.path.join(save_dir, timeframe_dir, date))
+
+        out_file = os.path.join(save_path, symbol + '.csv')
+        print(out_file, '\r',end="")
+        print()
+        df.to_csv(out_file)
+
+
 @click.command()
 @click.option("--symbol", required=True, help="Trading symbol (e.g. BTC/USDT)")
 @click.option("--start",type=click.DateTime(), help="Start date (YYYY-MM-DD)")
@@ -120,6 +145,9 @@ def main(symbol, start, end, timeframe, save_dir):
 if __name__ == "__main__":
     # main()
     
-    fetch_historical_data(symbol="BTC/USDT", start="2017-01-01", end="2026-01-01", interval='m', timeframe='1s', save_dir='./data')
+    # fetch_historical_data(symbol="BTC/USDT", start="2017-08-01", end="2025-05-01", interval='d', timeframe='1m', save_dir='./data')
+
+    convert_to_zipline_format('./data/BTCUSDT/days_1m', './data/BTCUSDT/', 'BTC_USDT', timeframe='1m', interval='d')
+
 
 #  python data.py --symbol BTC/USDT --start 2023-04-12 --end 2025-04-12 --timeframe 1m --save-dir ./data
