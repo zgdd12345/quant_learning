@@ -6,4 +6,3 @@ set QUANDL_API_KEY=JxAk9PxnUUfSqh6swgev
 zipline ingest -b quandl
 
 
-

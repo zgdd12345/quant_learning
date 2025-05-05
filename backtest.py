@@ -1,40 +1,38 @@
-import yfinance as yf
 import pandas as pd
-import matplotlib.pyplot as plt
+import  backtrader as bt
+from datetime import datetime
 
-# 获取股票数据
-symbol = "600519.SS"  # 茅台股票代码
-start_date = "2019-01-01"
-end_date = "2021-01-01"
+from strategy.strategy import MyStrategy
+from strategy.grid import GridTradingStrategyBase
 
-data = yf.download(symbol, start=start_date, end=end_date)
 
-# 计算移动平均
-data['SMA_50'] = data['Close'].rolling(window=50).mean()
-data['SMA_200'] = data['Close'].rolling(window=200).mean()
+if __name__ == '__main__':
 
-# 初始化交叉信号列
-data['Signal'] = 0
+    test_strategy = GridTradingStrategyBase
 
-# 计算交叉信号
-data.loc[data['SMA_50'] > data['SMA_200'], 'Signal'] = 1
-data.loc[data['SMA_50'] < data['SMA_200'], 'Signal'] = -1
+    df = pd.read_csv('./data/BTC-USDT_1m.csv')
+    df['datetime'] = pd.to_datetime(df['datetime'], utc=True)  # 自动识别时区并转为UTC
+    df.set_index('datetime', inplace=True)
 
-# 计算每日收益率
-data['Daily_Return'] = data['Close'].pct_change()
+    start_date = datetime(2025, 3, 12, 00, 00, 00)  # 回测开始时间
+    end_date = datetime(2025, 4, 13, 00, 00, 00)  # 回测结束时间
 
-# 计算策略信号的收益率（shift(1) 是为了避免未来数据的偏差）
-data['Strategy_Return'] = data['Signal'].shift(1) * data['Daily_Return']
+    data = bt.feeds.PandasData(dataname=df, fromdate=start_date, todate=end_date, timeframe=bt.TimeFrame.Minutes)
 
-# 计算累计收益
-data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
+    cerebro = bt.Cerebro() # 实例化 创建了一个机器人大脑（Cerebro），同时隐含创建了一个borker（券商）。
 
-# 绘制累计收益曲线
-plt.figure(figsize=(10, 6))
-plt.plot(data['Cumulative_Return'], label='Strategy Cumulative Return', color='b')
-plt.plot(data['Close'] / data['Close'].iloc[0], label='Stock Cumulative Return', color='g')
-plt.title("Cumulative Return of Strategy vs. Stock")
-plt.xlabel("Date")
-plt.ylabel("Cumulative Return")
-plt.legend()
-plt.show()
+    cerebro.adddata(data) # 添加数据
+    cerebro.broker.setcash(1000) # set init cash
+    cerebro.broker.setcommission(0.00075) # 设置佣金， 根据交易成本设置
+    cerebro.addsizer(bt.sizers.FixedSize, stake=0.002) # 设置每次买多少股票
+
+    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    # cerebro.addstrategy(test_strategy, myparam=20, exitbars=7) # 自定义策略
+    cerebro.addstrategy(GridTradingStrategyBase,
+                       grid_space=5,
+                       volume_per_layer=0.002,
+                       max_layers=5)
+    cerebro.run() # 运行 让机器人大脑开始运行。
+    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    cerebro.plot()
+
