@@ -15,7 +15,7 @@ if __name__ == '__main__':
     df.set_index('datetime', inplace=True)
 
     start_date = datetime(2025, 3, 15, 00, 00, 00)  # 回测开始时间
-    end_date = datetime(2025, 3, 20, 00, 00, 00)  # 回测结束时间
+    end_date = datetime(2025, 3, 16, 00, 00, 00)  # 回测结束时间
 
     data = bt.feeds.PandasData(dataname=df, fromdate=start_date, todate=end_date, timeframe=bt.TimeFrame.Minutes)
 
