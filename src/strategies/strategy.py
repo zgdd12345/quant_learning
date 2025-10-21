@@ -2,7 +2,7 @@ import pandas as pd
 import  backtrader as bt
 from datetime import datetime
 
-from myindicator import DerivativeIndicator
+from ..indicators.myindicator import DerivativeIndicator
 
 
 class MyStrategy(bt.Strategy):

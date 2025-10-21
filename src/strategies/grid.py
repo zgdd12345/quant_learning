@@ -1,5 +1,5 @@
 import backtrader as bt
-from indicator.gridindicator import GridIndicator
+from ..indicators.gridindicator import GridIndicator
 
 
 class GridTradingStrategyBase(bt.Strategy):

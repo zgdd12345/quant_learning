@@ -12,7 +12,9 @@ class Test:
         # start_date = config['start_date']
         # end_date = config['end_date']
 
-        self.data = yf.download(config['symbol'], start=config['start_date'], end= config['end_date'])
+        self.data: pd.DataFrame = yf.download(config['symbol'], start=config['start_date'], end=config['end_date']) # type: ignore
+        if self.data is None or self.data.empty:
+            raise ValueError("下载数据失败，请检查股票代码和网络连接")
 
     def run(self):
         self.mean_average_strategy()
@@ -64,10 +66,10 @@ if __name__ =="__main__":
         'long':50,
         'short':10,
 
-        'stock_name':'Maotai',
-        'symbol': "600519.SS",
-        'start_date':"2023-05-01",
-        'end_date':"2025-04-01",
+        'stock_name':'Bitcoin',
+        'symbol': "BTC-USD",
+        'start_date':"2020-01-01",
+        'end_date':"2024-01-01",
 
     }
 

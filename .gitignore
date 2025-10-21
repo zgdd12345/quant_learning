@@ -1,7 +1,15 @@
 
 # my data
 config.json
-data
+.vscode
+.claude
+results
+logs
+output
+cache
+temp
+tmp
+plots
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
